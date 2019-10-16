@@ -4,8 +4,10 @@
 #
 # Find out more about building applications with Shiny here:
 #
-#    http://shiny.rstudio.com/
+#    https://tianran.shinyapps.io/midterm_project/
 #
+
+# The github repository link is :https://github.com/Creatran/Shiny-App-for-HVMC.git
 
 library(shiny)
 library(DT)
