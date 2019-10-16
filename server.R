@@ -16,6 +16,7 @@ library(readxl)
 library(wordcloud)
 library(RColorBrewer)
 library(plotly)
+library(Hmisc)
 #Importing of Data Files
 carcass_calculator_data <- read_csv("./carcass_calculator_data.csv")
 wrs <- read.csv("Per_tonne_Protein_Consumed.csv")
@@ -142,9 +143,19 @@ shinyServer(function(input, output) {
     })
     # plot for Carbon Dioxide Emissions
     output$plot_CO2 <- renderPlotly({
+      median_cut <- with(plot_data(), wtd.quantile(`CO2 Emission`,probs = .5))
+    
       ggplotly({
-        ggplot(plot_data(), aes(x = reorder(Cut, -`CO2 Emission`), y = `CO2 Emission`)) + 
-          geom_bar(stat = 'identity', fill = 'maroon') + 
+        ggplot(plot_data()) + 
+          geom_bar(aes(x = reorder(Cut, -`CO2 Emission`), 
+                       y = ifelse(`CO2 Emission` <= median_cut, `CO2 Emission`, 0)), 
+                   stat = 'identity', fill = 'maroon') + 
+          geom_bar(aes(x = reorder(Cut, -`CO2 Emission`), 
+                       y = ifelse(`CO2 Emission` > median_cut, `CO2 Emission`, 0)), 
+                   stat = 'identity', fill = 'navy') + 
+          # 
+          #geom_bar(stat = "identity", colour = "white", fill = '#008fd5',
+          #         aes(x = Cut, y = ifelse(`CO2 Emission` == median_cut, `CO2 Emission`, 0)))+
           coord_flip() + 
           theme(axis.text.x = element_text(hjust = 1, size = 14),
                 axis.text.y = element_text( size = 7),
@@ -158,9 +169,13 @@ shinyServer(function(input, output) {
     })
     #Plot for Water  Usage 
     output$plot_water <- renderPlotly({
+      median_cut <- with(plot_data(), wtd.quantile(`Water Use`,probs = .5))
       ggplotly({
-        ggplot(plot_data(), aes(x = reorder(Cut, -`Water Use`), y = `Water Use`)) + 
-          geom_bar(stat = 'identity', fill = 'navy') + 
+        ggplot(plot_data(), ) +
+          geom_bar(aes(x = reorder(Cut, -`Water Use`), y = ifelse(`Water Use` <= median_cut, `Water Use`, 0)), 
+                   stat = 'identity', fill = '#008fd5') +
+          geom_bar(aes(x = reorder(Cut, -`Water Use`), y = ifelse(`Water Use` > median_cut, `Water Use`, 0)),
+                   stat = 'identity', fill = 'navy') + 
           coord_flip() +
           ggtitle(paste("Water Usage per", input$weight, "\nPounds of Beef")) + 
           ylab("Water Usage (in millions of gallons") + 
@@ -175,9 +190,13 @@ shinyServer(function(input, output) {
     
     # Plot for Land Usage
     output$plot_land <- renderPlotly({
+      median_cut <- with(plot_data(), wtd.quantile(`land Use`,probs = .5))
       ggplotly({
-        ggplot(plot_data(), aes(x = reorder(Cut, -`land Use`), y = `land Use`)) + 
-          geom_bar(stat = 'identity', fill = 'brown') + 
+        ggplot(plot_data()) + 
+          geom_bar(aes(x = reorder(Cut, -`land Use`), y = ifelse(`land Use` <= median_cut, `land Use`, 0)),
+                   stat = 'identity', fill = 'brown') + 
+          geom_bar(aes(x = reorder(Cut, -`land Use`), y = ifelse(`land Use` > median_cut, `land Use`, 0)),
+                   stat = 'identity', fill = 'navy') + 
           coord_flip() +
           ggtitle(paste("Land Usage per", input$weight, "Pounds\nof Beef")) + 
           ylab("Land (in acres)") + 
@@ -192,9 +211,15 @@ shinyServer(function(input, output) {
     
     # Plot for Number of Cows Required
     output$plot_ani <- renderPlotly({
+      median_cut <- with(plot_data(), wtd.quantile(`Number of Cows`,probs = .5))
       ggplotly({
-        ggplot(plot_data(), aes(x = reorder(Cut, -`Number of Cows`), y = `Number of Cows`)) + 
-          geom_bar(stat = 'identity', fill = 'orange') + 
+        ggplot(plot_data()) + 
+          geom_bar(aes(x = reorder(Cut, -`Number of Cows`), 
+                       y = ifelse(`Number of Cows` <= median_cut, `Number of Cows`, 0)),
+                   stat = 'identity', fill = 'orange') + 
+          geom_bar(aes(x = reorder(Cut, -`Number of Cows`), 
+                       y = ifelse(`Number of Cows` > median_cut, `Number of Cows`, 0)),
+                   stat = 'identity', fill = 'navy') +
           coord_flip() +
           ggtitle(paste("Number of Cows Required for\n", input$weight, "Pounds of Beef")) + 
           ylab("Number of Cows") + 
@@ -217,10 +242,15 @@ shinyServer(function(input, output) {
     })
     #Plot Price per Pound by cut of beef
     output$price_plot <- renderPlotly({
+      median_cut <- with(price_summary(), wtd.quantile(lbprize,probs = .5))
       ggplotly({
-        ggplot(price_summary(), 
-               aes(x = reorder(cut, lbprize), y = lbprize)) + 
-          geom_bar(stat = 'identity', fill = "blue") + 
+        ggplot(price_summary()) + 
+          geom_bar(aes(x = reorder(cut, lbprize), 
+                        y = ifelse( lbprize <= median_cut,  lbprize, 0)),
+                    stat = 'identity', fill = "#008fd5") + 
+          geom_bar(aes(x = reorder(cut, lbprize), 
+                       y = ifelse( lbprize > median_cut,  lbprize, 0)),
+                   stat = 'identity', fill = 'navy') +
           theme(axis.text.x = element_text(size = 10, angle = 90),
                 axis.text.y = element_text(size = 5),
                 plot.title = element_text(size = 20),
