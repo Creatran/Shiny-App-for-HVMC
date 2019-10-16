@@ -1,0 +1,251 @@
+---
+title: "mid"
+author: "Tianran Zhang"
+date: "10/12/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(readxl)
+```
+
+```{r}
+ccd <- read.csv('carcass_calculator_data.csv')
+cut1 <- ccd %>%
+  group_by(cut) %>%
+  summarise()
+hvm <- read.csv("HVM_Transaction_data.csv")
+names(hvm)
+head(hvm)
+```
+```{r}
+#cut2 <- 
+split_cut <- function(df){
+  df %>%
+    mutate(cut_id = unlist(str_split(Item, ':'))[3], 
+         cut = unlist(str_split(Item, ':'))[2]) %>%
+    mutate(cut = str_replace_all(cut, " ", ""))
+}
+
+cut2 <- hvm %>%
+  mutate(`Price...lb` = ifelse(`Price...lb` == 0, NA, `Price...lb`)) %>%
+  group_by(Item) %>%
+  do(split_cut(.)) %>%
+  group_by(cut) %>%
+  summarise(lbprize = mean(`Price...lb`, na.rm = TRUE))
+
+cut_prize$cut <- factor(cut_prize$cut)
+cut1$cut
+
+cut_prize <- cut2 %>%
+  mutate(from = ifelse(grepl('Chicken', cut), 'Chicken', 
+                       ifelse(grepl("Lamb", cut), 'Lamb', 
+                              ifelse(grepl('Pork', cut), 'Pork', 'Cow')))) %>%
+  mutate(from = ifelse(grepl("Bacon", cut), 'Pork', from)) %>%
+  filter(from == 'Cow')
+
+change_cut <- function(data, x, y){
+  cut_prize$cut[cut_prize$cut == x] = y
+}
+
+cut_prize$cut[cut_prize$cut == "EyeofRound"] = "Eye Round"
+cut_prize$cut[cut_prize$cut == "BeefBones"] = "Bones"
+cut_prize$cut[cut_prize$cut == "BeefShanks"] = "Shanks"
+cut_prize$cut[cut_prize$cut == "ChuckEye"] = "Chuck Eye"
+cut_prize$cut[cut_prize$cut == "ChuckUnderblade"] = "Chuck Underblade"
+cut_prize$cut[cut_prize$cut == "TopRound"] = "Top Round"
+cut_prize$cut[cut_prize$cut == "BottomRound"] = "Bottom Round"
+
+cut_prize$cut[cut_prize$cut == "GroundBeefMushroomBlend"] = "Blended Burger"
+cut_prize$cut[cut_prize$cut == "BoneinStrip"] = "Bone-in Strip"
+
+cut_prize$cut[cut_prize$cut == "ChuckRoll"] = "Chuck Roll"
+cut_prize$cut[cut_prize$cut == "GroundBeef"] = "Ground Beef"
+cut_prize$cut[cut_prize$cut == "FlapSteak"] = "Flap"
+cut_prize$cut[cut_prize$cut == "FlankSteak"] = "Flank"
+
+cut_prize$cut[cut_prize$cut == "TopBladeRoast"] = "Top Blade"
+cut_prize$cut[cut_prize$cut == "TeresMajor"] = "Teres Major"
+cut_prize$cut[cut_prize$cut == "Tri-Tip"] = "Tri-tip"
+cut_prize$cut[cut_prize$cut == "HangerSteak"] = "Hanger"
+cut_prize$cut[cut_prize$cut == "SirloinTip"] = "Sirloin"
+cut_prize$cut[cut_prize$cut == "ShortRibs"] = "Short Ribs"
+cut_prize$cut[cut_prize$cut == "ShoulderClod"] = "Should Clod"
+
+
+cut_prize$cut[cut_prize$cut == "BnlsRibeye"] = "Boneless Ribeye"
+cut_prize$cut[cut_prize$cut == "BeefTongue"] = "Tongue"
+cut_prize$cut[cut_prize$cut == "BeefNavel"] = "Navel"
+cut_prize$cut[cut_prize$cut == "BeefPatties"] = "Beef Patties"
+
+# not sure
+cut_prize$cut[cut_prize$cut == "BnlsStripLoin"] = "Boneless NY Strip"
+cut_prize$cut[cut_prize$cut == "BnlsStripLoin"] = "Boneless NY Strip"
+cut_prize$cut[cut_prize$cut == "BnlsStripLoin"] = "Boneless NY Strip"
+cut_prize$cut[cut_prize$cut == "BnlsStripLoin"] = "Boneless NY Strip"
+cut_prize$cut[cut_prize$cut == "BnlsStripLoin"] = "Boneless NY Strip"
+ccd
+
+cut_cal <- inner_join(ccd, cut_prize, by = c('cut'))
+cut_cal <- cut_cal %>%
+  select(-from)
+
+write.csv(cut_cal, 'Cut_Price')
+
+```
+```{r}
+cut_prize$cut
+```
+
+```{r}
+# Read Data
+wrs <- read.csv("Per_tonne_Protein_Consumed.csv")
+names(wrs)
+wrs_summary <- wrs %>%
+  rename(land = Total.land.use..ha., water = Total.water..m3., 
+         CO2 = Production.emissions..CO2e.) %>%
+  select(Food.type, land, water, CO2) %>%
+  gather(key = Envi.type, value = impact, -Food.type)
+wrs
+```
+
+```{r}
+ggplot(data = wrs_summary, 
+       aes(x = reorder(Food.type, impact), y = impact, group = Envi.type, fill = Envi.type)) + 
+  geom_bar(stat = 'identity', position = 'dodge') + 
+  theme(axis.text.x = element_text(size = 10, angle = 90),
+        axis.text.y = element_text(size = 5),
+        plot.title = element_text(size = 18)) + 
+  ggtitle("Environmental Impact")
+
+wrs_summary$impact <- as.numeric(unlist(wrs_summary$impact))
+wrs_summary$Envi.type
+```
+
+```{r}
+wrs2 <- read.csv('Per_million_kilocalories_consumed.csv')
+names(wrs2)
+
+wrs_summary2 <- wrs2 %>%
+  rename(land = Total.land.use..ha., water = Total.freshwater.consumption..m3., 
+         CO2 = Agricultural.production.emissions..CO2e.) %>%
+  select(Food.type, land, water, CO2) %>%
+  gather(key = Envi.type, value = impact, -Food.type)
+wrs
+
+wrs_summary2$impact
+
+
+
+ggplot(wrs_summary2, 
+               aes(x = reorder(Food.type, -impact), y = impact, group = Envi.type, fill = Envi.type)) + 
+            geom_bar(stat = 'identity', position = 'dodge') + 
+            theme(axis.text.x = element_text(size = 10, angle = 90),
+                  axis.text.y = element_text(size = 5),
+                  plot.title = element_text(size = 20),
+                  axis.title = element_text(size = 16)) + 
+            ggtitle("Per million kilocalories consumed")
+
+cut_price
+```
+
+```{r}
+weight = 1000
+water.rate <- 6.355078
+co2.emision <- 102.959
+land.use <- 77
+
+cut_price <- read.csv('Cut_Price.csv')
+write.csv(cut_price, "cut_price1.csv")
+
+a <- read.csv("cut_ratio.csv")
+write.csv(price_data, "cut_ratio.csv")
+cut_price <- cut_price %>%
+  select(-X)
+
+price_data <- cut_price %>%
+  mutate(number.cows = ceiling(weight/total_weight),
+         water.rate = water.rate * number.cows,
+         co2.emision = co2.emision * number.cows,
+         land.use = land.use * number.cows,
+         price = lbprize * number.cows * 490) %>%
+  select(cut, lbprize, water.rate, co2.emision, land.use)
+
+write.csv(price_data, "details.csv")
+  mutate(ratio = lbprize/(509 * water.rate + 31.4 * co2.emision + 42 * land.use) * 100) %>%
+  select(cut, ratio) %>%
+  arrange(-ratio)
+```
+
+```{r}
+wordcloud(price_data$cut, price_data$ratio, scale=c(8,.3), rot.per=.15,
+          random.order=FALSE,)
+
+
+
+```
+
+
+
+```{r}
+wordcloud(c("a", 'b', 'c'), freq = c(100, 1, 1))
+
+tdm <- TermDocumentMatrix(crude)
+	m <- as.matrix(tdm)
+	v <- sort(rowSums(m),decreasing=TRUE)
+	d <- data.frame(word = names(v),freq=v)
+	
+	head(d)
+	wordcloud(d$word,d$freq)
+cut_price
+wordcloud(cut_price$cut, cut_price$lbprize)
+```
+
+
+
+```{r}
+write.csv(price_data, 'cut_ratio')
+price_data
+  
+library(mosaic)
+ans <- fitModel(price ~ (k1 * water.rate + k2 * co2.emision + k3 * land.use), 
+                data = price_data_rs)
+ans <- nls(rs_price ~ (k1 * rs_water + k2 * rs_co2 + k3 * rs_land), 
+                data = price_data_rs)
+ans <- fitModel(price ~ k *(k1 * water.rate + k2 ), 
+                data = price_data)
+
+rscale01 <- function(x){
+  rng <- range(x)
+  rescale <- (x - rng[1])/(rng[2] - rng[1])
+  rescale
+}
+
+price_data_rs <- price_data %>%
+  mutate(rs_water = rscale01(water.rate),
+         rs_co2 = rscale01(co2.emision),
+         rs_land = rscale01(land.use),
+         rs_price = rscale01(price)
+         )
+
+ans <- lm(price ~ co2.emision) + land.use + water.rate , data = price_data_rs)
+ans <- lm(rs_price ~ rs_co2 + rs_land + rs_water , data = price_data_rs)
+summary(ans)
+
+
+lm(price ~ co2.emision, data = price_data)
+lm(price ~ water.rate, data = price_data)
+lm(price ~ land.use, data = price_data)
+
+
+lm(rs_price ~ rs_co2, data = price_data_rs)
+lm(rs_price ~ rs_water, data = price_data_rs)
+lm(rs_price ~ rs_land, data = price_data_rs)
+```
+
+
+
+
+
+
+
